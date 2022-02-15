@@ -1,0 +1,12 @@
+
+EOPL 介绍
+=========
+
+最近对PL比较感兴趣，网上搜了不少PL相关的书，其中EOPL（Essentials of Programming Language）评价比较好，适合入门。
+
+这本书从最简单的LET language 开始，一步步扩展，最终实现了一个有effect，type，module，oo 这些特性的语言，其中还着重介绍了control context 的显示表示：continuation，让读者在把玩解释器的过程中体会编程语言的核心概念。
+
+EOPL中的解释器是用scheme写的，词法分析和语法分析用的第三方模块。为了能够更深刻把握其中概念，我决定用python重写一遍其中关键代码，并手动完成词法分析和语法分析部分的工作。
+
+
+参考：https://eopl3.com/
