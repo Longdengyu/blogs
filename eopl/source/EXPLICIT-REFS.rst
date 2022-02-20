@@ -19,7 +19,7 @@ EXPLICIT-REFS 语言增加了引用类型，并提供了操作引用的几个原
 .. image:: store_passing_style.png 
 
 可以看到，在给表达式求值需要传入一个store对象，执行完会返回一个新的store对象。
-这两个store对象表示的store的不同状态。
+这两个store对象表示的是store的不同状态。
 
 问题：用什么表示store？
 
