@@ -43,9 +43,6 @@ class Token:
         return "{0}:{1}".format(self.type, self.value)
 
 
-
-
-
 class TokenizerException(Exception): pass
 
 
@@ -171,13 +168,16 @@ class TypeExp(Exp):
     def to_type_value(self):
         raise Exception("xxx")
 
+
 class BoolTypeExp(TypeExp):
     def to_type_value(self):
         return BoolType()
 
+
 class IntTypeExp(TypeExp):
     def to_type_value(self):
         return IntType()
+
 
 class ProcTypeExp(TypeExp):
     def __init__(self, var_type_exp, result_type_exp):
@@ -323,6 +323,7 @@ class Parser:
         self.require("RIGHT_P")
         return ProcTypeExp(arg_type_exp, result_type_exp)
 
+
 class LookupFailedException(BaseException):
     pass
 
@@ -435,11 +436,11 @@ class TExtendEnv(TEnv):
         else:
             return self.old_env.apply(var)
 
+
 class TypeValue:pass
-
 class IntType(TypeValue):pass
-
 class BoolType(TypeValue):pass
+
 
 class ProcType(TypeValue):
     def __init__(self, arg_type, result_type):
@@ -507,42 +508,42 @@ def type_of(exp: Exp, tenv: TEnv):
         return type_of(exp.letrec_body, tenv_for_letrec_body)
 
 
-def evaluate(exp: Exp, env: Env) -> ExpVal:
+def value_of(exp: Exp, env: Env) -> ExpVal:
     if isinstance(exp, ConstExp):
         return NumVal(exp.number)
     if isinstance(exp, VarExp):
         return env.apply(exp.name)
     if isinstance(exp, DiffExp):
-        v1 = evaluate(exp.exp1, env)
-        v2 = evaluate(exp.exp2, env)
+        v1 = value_of(exp.exp1, env)
+        v2 = value_of(exp.exp2, env)
         return NumVal(v1.to_num() - v2.to_num())
     if isinstance(exp, IsZeroExp):
-        v1 = evaluate(exp.exp, env)
+        v1 = value_of(exp.exp, env)
         return BoolVal(v1.to_num() == 0)
     if isinstance(exp, IFExp):
-        v1 = evaluate(exp.exp1, env)
+        v1 = value_of(exp.exp1, env)
         if v1.to_bool():
-            v2 = evaluate(exp.exp2, env)
+            v2 = value_of(exp.exp2, env)
             return v2
         else:
-            v3 = evaluate(exp.exp3, env)
+            v3 = value_of(exp.exp3, env)
             return v3
     if isinstance(exp, LetExp):
-        v1 = evaluate(exp.exp1, env)
-        return evaluate(exp.body, ExtendEnv(exp.name, v1, env))
+        v1 = value_of(exp.exp1, env)
+        return value_of(exp.body, ExtendEnv(exp.name, v1, env))
 
     if isinstance(exp, ProcExp):
         return ProcVal(exp.var, exp.body, env)
 
     if isinstance(exp, CallExp):
-        proc_val = evaluate(exp.rator, env)
+        proc_val = value_of(exp.rator, env)
         procedure = proc_val.to_proc()
 
-        rand_val = evaluate(exp.rand, env)
-        return evaluate(procedure.body, ExtendEnv(procedure.var, rand_val, procedure.env))
+        rand_val = value_of(exp.rand, env)
+        return value_of(procedure.body, ExtendEnv(procedure.var, rand_val, procedure.env))
 
     if isinstance(exp, LetRecExp):
-        return evaluate(exp.letrec_body, LetRecEnv(exp.p_name, exp.b_var, exp.p_body, env))
+        return value_of(exp.letrec_body, LetRecEnv(exp.p_name, exp.b_var, exp.p_body, env))
 
 
 def run(prog):
@@ -557,45 +558,54 @@ the program:
 ---
 evaluated to:
 {1}
-    """.format(prog, evaluate(exp, init_env()))
+    """.format(prog, value_of(exp, init_env()))
     print(text)
 
 
 def type_check(prog):
     parser = Parser(Lexer(prog))
     exp = parser.parse_prog()
-    type_value = type_of(exp, TEmptyEnv())
-    text = """
+    try:
+        type_value = type_of(exp, TEmptyEnv())
+        text = """
 the program:
 ---
 {0}
 ---
 is type checked
-    """.format(prog)
-    print(text)
-
+        """.format(prog)
+        print(text)
+    except Exception as e:
+        text = """
+the program:
+---
+{0}
+---
+is not type checked
+                """.format(prog)
+        print(text)
 
 def type_check_and_run(prog):
     type_check(prog)
     run(prog)
 
-
-# run_type_of("""
-# proc (f : (bool -> int)) proc (n : int) (f zero?(n))
-# """)
-
-type_check_and_run("""
-letrec
-int foo (x : int) = if zero?(x)
-then 1
-else -(x, (foo -(x,1)))
-in (foo 10)
+# success
+type_check("""
+letrec int f(n:int) = 
+        if zero?(n) 
+        then 0 
+        else -((f -(n, 1)), -(0, n)) 
+in (f 10)
 """)
 
-# type_check("""
-# letrec
-# int foo (x : int) = zero?(x)
-# in foo
-# """)
+# fail
+type_check("""
+letrec int f(n:int) = 
+        if zero?(n) 
+        then 0 
+        else -((f -(n, 1)), -(0, n)) 
+in (f zero?(0))
+""")
+
 
 
